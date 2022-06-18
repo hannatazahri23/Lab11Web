@@ -53,7 +53,7 @@ $routes->get('/faqs', 'Page::faqs');
 
 #### Dan lihat hasilnya..!!
 ![img11-12](img/img11_12.JPG)
-### Halaman menampilan tulisan **404 - File Not Found** karena file/page tersebut kosong atau tidak ada isinya.
+#### Halaman menampilan tulisan **404 - File Not Found** karena file/page tersebut kosong atau tidak ada isinya.
 
 #
 
