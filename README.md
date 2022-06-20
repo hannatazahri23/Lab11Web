@@ -530,3 +530,223 @@ public function delete($id) {
     return redirect('admin/artikel');
 }
 ```
+
+
+#
+
+
+## Tugas Praktikum 13 **(Framework Lanjutan : Modul Login)**
+
+### 1.) Membuat DB untuk modul Login
+#### Buka CMD untuk membuat database atau bisa langsung membuatnya di URL: `localhost/phpmyadmin/`.
+```sql
+CREATE TABLE user (
+    id INT(11) auto_increment,
+    username VARCHAR(200) NOT NULL,
+    useremail VARCHAR(200),
+    userpassword VARCHAR(200),
+    PRIMARY KEY(id)
+);
+```
+![img13-1](img/img13-1.JPG)
+
+#
+
+### 2.) Membuat Model User
+#### Buatlah file baru pada direktori `app/Models` dengan nama **UserModel.php** dan buatlah syntax berikut.
+```php
+<?php
+
+namespace App\Models;
+
+use CodeIgniter\Model;
+
+class UserModel extends Model
+{
+  protected $table = 'user';
+  protected $primaryKey = 'id';
+  protected $useAutoIncrement = true;
+  protected $allowedFields = ['username', 'useremail', 'userpassword'];
+}
+```
+
+#
+
+### 3.) Membuat Controller User
+#### Buat Controller baru dengan nama **User.php** pada direktori `app/Controllers`. Kemudian tambahkan method **index()** untuk menampilkan daftar user, dan method **login()** untuk proses login.
+```php
+<?php
+
+namespace App\Controllers;
+
+use App\Models\UserModel;
+
+class User extends BaseController {
+  public function index() {
+    $title = 'Daftar User';
+    $model = new UserModel();
+    $users = $model->findAll();
+    return view('user/index', compact('users', 'title'));
+  }
+
+  public function login() {
+    helper(['form']);
+    $email = $this->request->getPost('email');
+    $password = $this->request->getPost('password');
+    if (!$email) {
+      return view('user/login');
+    }
+
+    $session = session();
+    $model = new UserModel();
+    $login = $model->where('useremail', $email)->first();
+    if ($login) {
+      $pass = $login['userpassword'];
+      if (password_verify($password, $pass)) {
+        $login_data = [
+          'user_id' => $login['id'],
+          'user_name' => $login['username'],
+          'user_email' => $login['useremail'],
+          'logged_in' => TRUE
+        ];
+        $session->set($login_data);
+        return redirect('admin/artikel');
+      } else {
+        $session->setFlashdata('flash_msg', 'Password Salah');
+        return redirect()->to('user/login');
+      }
+    } else {
+      $session->setFlashdata('flash_msg', 'Email Tidak Terdaftar');
+      return redirect()->to('user/login');
+    }
+  }
+}
+```
+
+#
+
+### 4.) Membuat View Login
+#### Buat direktori baru dengan nama **user** pada direktori `app/views`, kemudian buat file baru dengan nama **login.php**.
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="<?= base_url('/style.css');?>">
+    <title>Login</title>
+</head>
+<body>
+<div id="login-wrapper">
+    <div class="kolom">
+      <h1>Sign In</h1>
+      <?php if (session()->getFlashdata('flash_msg')) : ?>
+        <div class="alert alert-danger">
+            <?= session()->getFlashdata('flash_msg') ?>
+        </div>
+      <?php endif; ?>
+      <form action="" method="post">
+        <div class="mb-3">
+          <label for="InputForEmail" class="form-label">Email address</label>
+          <input type="email" name="email" class="form-control" id="InputForEmail" value="<?= set_value('email') ?>">
+        </div>
+        <div class="mb-3">
+          <label for="InputForPassword" class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" id="InputForPassword">
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <a href="<?= base_url('/'); ?>">Back to home</a>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+#
+
+### 5.) Membuat DB Seeder
+#### Buka `CLI`, kemudian tulis perintah berikut sesuai instruksi pada gambar.
+```sql
+php spark make:seeder UserSeeder
+```
+![img13-2](img/img13-2.JPG)
+
+### setelah itu buka direktori `app/Database/Seeds` untuk menuju dan membuka **file UserSeeder.php**, Kemudian isi kode berikut.
+```php
+<?php
+
+namespace App\Database\Seeds;
+
+use CodeIgniter\Database\Seeder;
+
+class UserSeeder extends Seeder
+{
+    public function run()
+    {
+        $model = model('UserModel');
+        $model->insert([
+            'username' => 'admin',
+            'useremail' => 'admin@gmail.com',
+            'userpassword' => password_hash('admin123', PASSWORD_DEFAULT),
+        ]);
+    }
+}
+```
+
+### Selanjutnya buka kembali `CLI` dan ketik perintah tersebut.
+```sql
+php spark db:seed UserSeeder
+```
+![img13-3](img/img13-3.JPG)
+
+### Buka URL: http://localhost:8080/user/login untuk melihat hasilnya. (jikalau ingin memperbagus hasilnya silahkan gunakan style CSS sesuai dengan `<link rel="">` yang ada pada file **login.php**)
+![img13-4](img/img13-4.JPG)
+
+#
+
+### 6.) Menambahkan Auth Filter
+#### Buat file baru pada direktori `app/Filters` dengan nama **Auth.php**.
+```php
+<?php
+
+namespace App\Filters;
+
+use CodeIgniter\HTTP\RequestInterface;
+use CodeIgniter\HTTP\ResponseInterface;
+use CodeIgniter\Filters\FilterInterface;
+
+class Auth implements FilterInterface {
+  public function before(RequestInterface $request, $arguments = null) {
+    // jika user belum login 
+    if (!session()->get('logged_in')) {
+      // maka redirct ke halaman login 
+      return redirect()->to('user/login');
+    }
+  }
+  public function after(RequestInterface $request, ResponseInterface $response, $arguments = null) {
+    // Do something here 
+  }
+}
+```
+
+#### Selanjutnya buka file `app/Config/Filters.php` tambahkan kode berikut:
+```php
+'auth' => App\Filters\Auth::class
+```
+![img13-5](img/img13-5.JPG)
+
+#### Kemudian buka file `app/Config/Routes.php` dan sesuaikan Instruksi kodenya seperti di gambar.
+![img13-6](img/img13-6.JPG)
+
+#
+
+### 7.) Membuat Fungsi Logout
+#### Tambahkan method **logout()** pada direktori `app/Controllers/User.php`.
+```php
+public function logout() {
+    session()->destroy();
+    return redirect()->to('/user/login');
+}
+```
