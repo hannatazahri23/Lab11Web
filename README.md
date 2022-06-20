@@ -701,7 +701,7 @@ php spark db:seed UserSeeder
 ```
 ![img13-3](img/img13-3.JPG)
 
-### Buka URL: http://localhost:8080/user/login untuk melihat hasilnya. (jikalau ingin memperbagus hasilnya silahkan gunakan style CSS sesuai dengan `<link rel="">` yang ada pada file **login.php**)
+#### Buka URL: http://localhost:8080/user/login untuk melihat hasilnya. (jikalau ingin memperbagus hasilnya silahkan gunakan style CSS sesuai dengan `<link rel="">` yang ada pada file **login.php**)
 ![img13-4](img/img13-4.JPG)
 
 #
